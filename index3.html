@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Einfacher Fitness‑Timer</title>
+<style>
+  body {font-family: Arial, sans-serif; margin:30px;}
+  #status {
+      font-size:1.5em;margin-top:20px;
+      transition:background-color .4s, color .4s; /* sanfte Farbwechsel */
+  }
+  button{padding:.5rem 1rem;font-size:1rem;margin-right:10px;}
+</style>
+</head>
+<body>
+
+<h1>Fitness‑Timer (Laufen & Gehen)</h1>
+
+<label for="run">Lauf‑Zeit (Sekunden): </label>
+<input id="run" type="number" value="30" min="1"><br><br>
+
+<label for="walk">Geh‑Zeit (Sekunden): </label>
+<input id="walk" type="number" value="60" min="1"><br><br>
+
+<button id="startBtn">Start</button>
+<button id="stopBtn" disabled>Stop</button>
+
+<div id="status"></div>
+
+<script>
+(() => {
+  const walkInput = document.getElementById('walk');
+  const runInput  = document.getElementById('run');
+  const startBtn  = document.getElementById('startBtn');
+  const stopBtn   = document.getElementById('stopBtn');
+  const statusDiv = document.getElementById('status');
+
+  // --- Farben für die Phasen (optional anpassen) ---
+  const colors = {
+      Geh: '#ff4d4d',   // rot
+      Lauf: '#4dff4d'   // grün
+  };
+
+  let timerInterval = null;
+  let phase = 'Lauf'; // Start mit Laufphase
+  let remaining = parseInt(runInput.value, 10);
+
+  /* ---------- Audio‑Beep ---------- */
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playBeep() {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode   = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime); // 600 Hz
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 120); // 120 ms beep
+  }
+
+  /* ---------- Status‑Update & optisches Signal ---------- */
+  function updateStatus() {
+    statusDiv.textContent = `Phase: ${phase} | Restzeit: ${remaining}s`;
+    document.body.style.backgroundColor = colors[phase];
+  }
+
+  /* ---------- Phase‑wechsel ---------- */
+  function switchPhase() {
+      playBeep();                     // akustisches Signal
+      // optisches Blink‑Effect (kurz den Text invertieren)
+      statusDiv.classList.add('blink');
+      setTimeout(() => statusDiv.classList.remove('blink'), 200);
+
+      if (phase === 'Geh') {
+          phase = 'Lauf';
+          remaining = parseInt(runInput.value, 10);
+      } else {
+          phase = 'Geh';
+          remaining = parseInt(walkInput.value, 10);
+      }
+      updateStatus();
+  }
+
+  /* ---------- Timer‑Tick ---------- */
+  function tick() {
+      if (remaining > 0) {
+          remaining--;
+          updateStatus();
+      } else {
+          switchPhase();
+      }
+  }
+
+  /* ---------- Buttons ---------- */
+  startBtn.addEventListener('click', () => {
+      if (timerInterval !== null) return;
+      phase = 'Lauf'; // Start mit Laufphase
+      remaining = parseInt(runInput.value, 10);
+      updateStatus();
+      timerInterval = setInterval(tick, 1000);
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+  });
+
+  stopBtn.addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      statusDiv.textContent = 'Timer angehalten.';
+      document.body.style.backgroundColor = ''; // reset
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+  });
+})();
+</script>
+
+<style>
+/* Blink‑Effect für Status-Text */
+#status.blink {
+    color: #ffffff;          /* weißer Text */
+    background-color: #000000 !important; /* schwarzer Hintergrund */
+}
+</style>
+
+</body>
+</html>
