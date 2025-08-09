@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Einfacher Fitness‑Timer</title>
+<style>
+  body {font-family: Arial, sans-serif; margin:30px;}
+  #status {font-size:1.5em;margin-top:20px;}
+  button{padding:.5rem 1rem;font-size:1rem;margin-right:10px;}
+</style>
+</head>
+<body>
+
+<h1>Fitness‑Timer (Geh & Lauf)</h1>
+
+<label for="walk">Geh‑Zeit (Sekunden): </label>
+<input id="walk" type="number" value="60" min="1"><br><br>
+
+<label for="run">Lauf‑Zeit (Sekunden): </label>
+<input id="run" type="number" value="30" min="1"><br><br>
+
+<button id="startBtn">Start</button>
+<button id="stopBtn" disabled>Stop</button>
+
+<div id="status"></div>
+
+<script>
+(() => {
+  const walkInput = document.getElementById('walk');
+  const runInput  = document.getElementById('run');
+  const startBtn  = document.getElementById('startBtn');
+  const stopBtn   = document.getElementById('stopBtn');
+  const statusDiv = document.getElementById('status');
+
+  let timerInterval = null;
+  let phase = 'Geh';          // Startphase
+  let remaining = parseInt(walkInput.value, 10);
+
+  function updateStatus() {
+    statusDiv.textContent =
+      `Phase: ${phase} | Restzeit: ${remaining}s`;
+  }
+
+  function switchPhase() {
+    if (phase === 'Geh') {
+      phase = 'Lauf';
+      remaining = parseInt(runInput.value, 10);
+    } else {
+      phase = 'Geh';
+      remaining = parseInt(walkInput.value, 10);
+    }
+    updateStatus();
+  }
+
+  function tick() {
+    if (remaining > 0) {
+      remaining--;
+      updateStatus();
+    } else {
+      // Phase wechselt
+      switchPhase();
+    }
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (timerInterval !== null) return;          // bereits läuft
+    phase = 'Geh';
+    remaining = parseInt(walkInput.value, 10);
+    updateStatus();
+    timerInterval = setInterval(tick, 1000);
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  });
+
+  stopBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    statusDiv.textContent = 'Timer angehalten.';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  });
+})();
+</script>
+
+</body>
+</html>
